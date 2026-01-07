@@ -7,7 +7,7 @@ A complete MVP "Chat with Your Documents" RAG (Retrieval-Augmented Generation) a
 - **Document Upload**: Upload PDF and TXT files
 - **Text Extraction**: Automatic text extraction from uploaded documents
 - **Intelligent Chunking**: Token-aware chunking with configurable overlap
-- **Vector Embeddings**: Generate embeddings using OpenAI's text-embedding-3 models
+- **Vector Embeddings**: Generate embeddings using Ollama's nomic-embed-text model
 - **Vector Search**: Fast similarity search using pgvector
 - **RAG Chat**: Chat with your documents with grounded responses and citations
 - **Document Selection**: Choose specific documents or chat with all documents
@@ -20,7 +20,7 @@ A complete MVP "Chat with Your Documents" RAG (Retrieval-Augmented Generation) a
 - **Backend**: Next.js API Routes
 - **Database**: Supabase (PostgreSQL with pgvector extension)
 - **ORM**: Prisma
-- **AI**: OpenAI (embeddings + chat)
+- **AI**: Ollama (embeddings + chat)
 - **Text Processing**: pdf-parse, tiktoken
 
 ### Project Structure
@@ -40,7 +40,7 @@ A complete MVP "Chat with Your Documents" RAG (Retrieval-Augmented Generation) a
 │   ├── db.ts            # Prisma client
 │   ├── extract.ts       # PDF/TXT text extraction
 │   ├── chunk.ts         # Token-aware chunking
-│   ├── embeddings.ts    # OpenAI embedding generation
+│   ├── embeddings.ts    # Ollama embedding generation
 │   ├── retrieval.ts     # Vector search and retrieval
 │   └── prompt.ts        # RAG prompt building
 ├── prisma/
@@ -55,8 +55,7 @@ A complete MVP "Chat with Your Documents" RAG (Retrieval-Augmented Generation) a
 
 - Node.js 18+ and npm/yarn
 - Supabase account (free tier works)
-- Ollama installed locally (https://ollama.com/download) for the default free/local setup
-- (Optional) OpenAI API key if you disable Ollama and use OpenAI
+- Ollama installed locally (https://ollama.com/download)
 
 ### 1. Install Dependencies
 
@@ -116,11 +115,8 @@ Add the following variables:
 - `DATABASE_URL`: Your Supabase connection string
   - Format: `postgresql://postgres:[YOUR-PASSWORD]@[PROJECT-REF].supabase.co:5432/postgres`
   - Get it from: Supabase Dashboard → Project Settings → Database → Connection string (URI)
-- `OPENAI_API_KEY`: Your OpenAI API key
-  - Get it from: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 
 **Optional (with defaults):**
-- `USE_OLLAMA`: Enable Ollama (default: true if OPENAI_API_KEY is not set)
 - `OLLAMA_HOST`: Ollama host (default: `http://localhost:11434`)
 - `UPLOAD_DIR`: Directory for uploaded files (default: `./data/uploads`)
 - `CHUNK_SIZE_TOKENS`: Chunk size in tokens (default: 800)
@@ -134,7 +130,6 @@ Add the following variables:
 Example `.env` file:
 ```env
 DATABASE_URL="postgresql://postgres:your-password@xxxxx.supabase.co:5432/postgres"
-OPENAI_API_KEY="sk-your-openai-api-key-here"
 ```
 
 ### 5. Set Up Database Schema
@@ -151,30 +146,21 @@ npm run db:migrate
 
 After running migrations, create the vector index for efficient similarity search:
 
-**Important**: The index type depends on your embedding model:
-- **IVFFlat**: Works with up to 2000 dimensions (default: `nomic-embed-text` on Ollama, 768 dims)
-- **HNSW**: Required for embeddings with more than 2000 dimensions (e.g., `text-embedding-3-large` - 3072 dims)
+**Important**: The default `nomic-embed-text` model uses 768 dimensions, which works with IVFFlat index.
 
 1. Go to your Supabase Dashboard
 2. Navigate to **SQL Editor**
 3. Run the appropriate SQL based on your embedding model:
 
-**For `nomic-embed-text` (default, 768 dimensions on Ollama) - Use IVFFlat:**
+**For `nomic-embed-text` (default, 768 dimensions) - Use IVFFlat:**
 ```sql
 CREATE INDEX IF NOT EXISTS chunks_embedding_idx ON chunks 
 USING ivfflat (embedding vector_cosine_ops) 
 WITH (lists = 100);
 ```
 
-**For `text-embedding-3-large` (3072 dimensions) - Use HNSW:**
-```sql
-CREATE INDEX IF NOT EXISTS chunks_embedding_idx ON chunks 
-USING hnsw (embedding vector_cosine_ops);
-```
-
 **Note**: 
 - The `lists` parameter for IVFFlat should be approximately `rows / 1000` for optimal performance. Start with 100 and increase as your data grows.
-- If you're using `text-embedding-3-large`, you must also update the Prisma schema to use `vector(3072)` instead of `vector(768)` and regenerate the client.
 
 ### 7. Run Development Server
 
@@ -213,8 +199,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
    - Creates chunks of ~800 tokens with 150 token overlap
    - Preserves context across chunk boundaries
 4. **Embedding Generation**: 
-   - Generates embeddings for all chunks using Ollama by default (`nomic-embed-text`, 768 dims)
-   - Can be configured to use OpenAI models (`text-embedding-3-small` 1536 dims or `text-embedding-3-large` 3072 dims) via `EMBEDDING_MODEL` and setting `USE_OLLAMA=false`
+   - Generates embeddings for all chunks using Ollama (`nomic-embed-text`, 768 dims)
 5. **Storage**: 
    - Stores chunks with embeddings in PostgreSQL
    - Uses pgvector's `vector` type for efficient storage
@@ -230,7 +215,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
    - Builds prompt with system instructions for grounded responses
    - Includes retrieved chunks with metadata
 4. **Response Generation**: 
-   - Sends to OpenAI chat model (gpt-4o-mini by default)
+   - Sends to Ollama chat model (llama3.1:8b by default)
    - Model is instructed to only use provided context
    - Returns "I don't know" if answer isn't in context
 5. **Citation Extraction**: 
@@ -254,8 +239,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - `document_id`: Foreign key to Document
 - `chunk_index`: Sequential chunk number
 - `content`: Chunk text content
-- `embedding`: Vector(768) - pgvector type (default, for nomic-embed-text / Ollama)
-  - Can be changed to Vector(1536) for text-embedding-3-small or Vector(3072) for text-embedding-3-large (requires matching index type)
+- `embedding`: Vector(768) - pgvector type (for nomic-embed-text)
 - `page`: Optional page number (for PDFs)
 - `created_at`: Timestamp
 
@@ -266,11 +250,8 @@ All configuration is in `lib/config.ts` and can be overridden via environment va
 - **Chunking**: 800 tokens with 150 token overlap (configurable)
 - **Retrieval**: Top 6 chunks by default (configurable)
 - **Models**: 
-  - Embeddings: `nomic-embed-text` (768 dims, default for Ollama) or OpenAI models (`text-embedding-3-small` 1536 dims, `text-embedding-3-large` 3072 dims)
-    - 768 works with IVFFlat (default)
-    - 1536 works with IVFFlat
-    - 3072 requires HNSW
-  - Chat: `llama3.1:8b` (default for Ollama) or `gpt-4o-mini` (OpenAI)
+  - Embeddings: `nomic-embed-text` (768 dims, works with IVFFlat index)
+  - Chat: `llama3.1:8b` (default)
 
 ## Troubleshooting
 
@@ -292,7 +273,7 @@ If you see errors about pgvector, ensure:
 
 - Embeddings are generated in batches
 - For many chunks, this may take time
-- The default `nomic-embed-text` (Ollama) runs locally; for faster hosted embeddings, use `text-embedding-3-small` with OpenAI (requires credits)
+- The default `nomic-embed-text` runs locally via Ollama
 
 ## Production Considerations
 

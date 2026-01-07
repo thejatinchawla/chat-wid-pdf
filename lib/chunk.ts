@@ -16,7 +16,7 @@ export interface Chunk {
  * Chunk text using token-aware splitting with overlap
  */
 export function chunkText(text: string, page?: number): Chunk[] {
-  // Use cl100k_base encoding (used by GPT-3.5, GPT-4, text-embedding-3)
+  // Use cl100k_base encoding (compatible with most models)
   const encoding = encoding_for_model('gpt-4o-mini');
   
   const tokens = encoding.encode(text);

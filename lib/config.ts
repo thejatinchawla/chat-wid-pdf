@@ -10,11 +10,8 @@ export const config = {
   // Retrieval configuration
   topK: parseInt(process.env.TOP_K || '6', 10),
 
-  // OpenAI configuration
-  // Defaults set for Ollama (free/local). To use OpenAI, set USE_OLLAMA=false and provide OPENAI_API_KEY.
-  // Ollama defaults: nomic-embed-text (768 dims), llama3.1:8b for chat.
-  // If you switch to OpenAI embeddings, adjust vector dimensions and index accordingly.
-  useOllama: process.env.USE_OLLAMA?.toLowerCase() === 'true' || !process.env.OPENAI_API_KEY,
+  // Ollama configuration
+  // Defaults: nomic-embed-text (768 dims), llama3.1:8b for chat.
   ollamaHost: process.env.OLLAMA_HOST || 'http://localhost:11434',
   embeddingModel: process.env.EMBEDDING_MODEL || 'nomic-embed-text',
   chatModel: process.env.CHAT_MODEL || 'llama3.1:8b',

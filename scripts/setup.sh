@@ -11,7 +11,7 @@ echo ""
 if [ ! -f .env ]; then
   echo "📝 Creating .env file from .env.example..."
   cp .env.example .env
-  echo "⚠️  Please edit .env and add your DATABASE_URL and OPENAI_API_KEY"
+  echo "⚠️  Please edit .env and add your DATABASE_URL"
   echo ""
 fi
 
@@ -34,7 +34,7 @@ echo "📋 Next steps:"
 echo "1. Create a Supabase project at https://supabase.com"
 echo "2. Enable pgvector extension in Supabase Dashboard → Database → Extensions"
 echo "3. Get your connection string from Supabase Dashboard → Project Settings → Database"
-echo "4. Update .env with your DATABASE_URL and OPENAI_API_KEY"
+echo "4. Update .env with your DATABASE_URL"
 echo "5. Run migrations: npm run db:migrate"
 echo "6. Create the vector index in Supabase SQL Editor (run scripts/setup-db.sql)"
 echo "7. Start the development server: npm run dev"

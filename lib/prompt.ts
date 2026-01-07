@@ -55,7 +55,7 @@ Please answer the question using ONLY the information from the context above. If
 }
 
 /**
- * Build messages array for OpenAI chat completion
+ * Build messages array for Ollama chat completion
  */
 export function buildChatMessages(question: string, chunks: RetrievedChunk[]): ChatMessage[] {
   return [
