@@ -1,0 +1,33 @@
+{
+  "name": "chat-wid-pdf",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.19.0",
+    "next": "14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "openai": "^4.52.0",
+    "pdf-parse": "^1.1.1",
+    "tiktoken": "^1.0.10",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/pdf-parse": "^1.1.4",
+    "prisma": "^5.19.0",
+    "typescript": "^5.5.3"
+  }
+}
+

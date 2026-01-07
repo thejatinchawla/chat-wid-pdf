@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  title     String
+  filePath  String   @map("file_path")
+  mimeType  String   @map("mime_type")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  chunks Chunk[]
+
+  @@map("documents")
+  @@index([userId])
+}
+
+model Chunk {
+  id         String    @id @default(uuid())
+  documentId String    @map("document_id")
+  chunkIndex Int       @map("chunk_index")
+  content    String    @db.Text
+  embedding  Unsupported("vector(768)") // nomic-embed-text (Ollama) uses 768 dimensions (works with IVFFlat)
+  // If using text-embedding-3-small (1536) or text-embedding-3-large (3072), adjust dimension and index type accordingly
+  page       Int?
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("chunks")
+  @@index([documentId])
+  // Note: Vector index must be created manually via SQL:
+  // CREATE INDEX ON chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+  // or for HNSW (if supported):
+  // CREATE INDEX ON chunks USING hnsw (embedding vector_cosine_ops);
+}
+
